@@ -6,7 +6,7 @@ name: Build and deploy ASP app to Azure Web App - shoppingapp132
 on:
   push:
     branches:
-      - main
+      - none
   workflow_dispatch:
 
 jobs:
@@ -63,4 +63,5 @@ jobs:
           app-name: 'shoppingapp132'
           slot-name: 'Production'
           package: .
+
           
