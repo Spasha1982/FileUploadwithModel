@@ -3,18 +3,16 @@ name: Build .NET Framework 4.8 App
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # allows manual run
+      - none
+
+  workflow_dispatch:  # Enables manual trigger
 
 jobs:
   build:
-    runs-on: windows-latest   # 👈 Required for .NET Framework builds
+    runs-on: windows-latest   # .NET Framework requires Windows
 
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -28,18 +26,18 @@ jobs:
 
       # Step 4: Restore NuGet packages
       - name: Restore NuGet packages
-        run: nuget restore FileUploadwithModelandPreview.sln   # 👈 Replace with your solution file name
+        run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
       # Step 5: Build the solution
-      - name: Build solution
-        run: msbuild YourSolution.sln /p:Configuration=Release /p:Platform="Any CPU"
+      - name: Build Solution
+        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln /p:Configuration=Release /p:Platform="Any CPU"
 
-      # Step 6: (Optional) Publish Web App or Package
+      # Step 6: (Optional) Package Web App (if it's a web project)
       - name: Package Web App
-        run: msbuild YourWebProject.csproj /p:Configuration=Release /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\YourApp.zip"
+        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj /p:Configuration=Release /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\WebApp.zip"
 
-      # Step 7: Upload build artifact
-      - name: Upload artifact
+      # Step 7: Upload artifact (output files)
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: drop
