@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ None ]
-
+permissions:
+  id-token: write
+  contents: read
 jobs:
   build:
     runs-on: windows-latest
