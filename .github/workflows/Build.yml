@@ -1,7 +1,7 @@
 name: Build .NET Framework 4.8 WebApp
 
 on:
-  workflow_dispatch: # lets you run it manually from the Actions tab
+  workflow_dispatch: # allows manual run
   push:
     branches: [ main ]
 
@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup MSBuild
@@ -23,15 +23,19 @@ jobs:
         run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
       - name: Build and Package Web App
-        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
-          /p:Configuration=Release `
-          /p:WebPublishMethod=Package `
-          /p:PackageAsSingleFile=true `
-          /p:SkipInvalidConfigurations=true `
-          /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\WebApp.zip"
+        run: |
+          msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
+            /p:Configuration=Release `
+            /p:WebPublishMethod=Package `
+            /p:PackageAsSingleFile=true `
+            /p:SkipInvalidConfigurations=true `
+            /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\WebApp.zip"
 
-      - name: Upload Artifact
+      - name: Verify build output
+        run: dir ${{ github.workspace }}\drop
+
+      - name: Upload Artifact (WebApp.zip)
         uses: actions/upload-artifact@v4
         with:
           name: WebApp
-          path: ${{ github.workspace }}\\drop\\WebApp.zip
+          path: ${{ github.workspace }}\drop\WebApp.zip
