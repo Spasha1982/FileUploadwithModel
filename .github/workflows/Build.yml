@@ -1,0 +1,46 @@
+name: Build .NET Framework 4.8 App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # allows manual run
+
+jobs:
+  build:
+    runs-on: windows-latest   # 👈 Required for .NET Framework builds
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Setup MSBuild (Visual Studio Build Tools)
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # Step 3: Setup NuGet
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      # Step 4: Restore NuGet packages
+      - name: Restore NuGet packages
+        run: nuget restore FileUploadwithModelandPreview.sln   # 👈 Replace with your solution file name
+
+      # Step 5: Build the solution
+      - name: Build solution
+        run: msbuild YourSolution.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      # Step 6: (Optional) Publish Web App or Package
+      - name: Package Web App
+        run: msbuild YourWebProject.csproj /p:Configuration=Release /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\YourApp.zip"
+
+      # Step 7: Upload build artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: drop
+          path: ${{ github.workspace }}\drop
