@@ -53,6 +53,12 @@ jobs:
       # 6️⃣ Verify the output folder content
       - name: Verify publish output
         run: dir "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
+        
+      - name: Upload Artifact (WebApp)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebApp
+          path: ${{ github.workspace }}\FileUploadwithModelandPreview\FileUploadwithModelandPreview\publish
 
       # 7️⃣ Deploy to Azure App Service (using Publish Profile)
 
