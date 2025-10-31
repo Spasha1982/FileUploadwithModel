@@ -3,7 +3,7 @@ name: Build .NET Framework 4.8 WebApp
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ None ]
 
 jobs:
   build:
