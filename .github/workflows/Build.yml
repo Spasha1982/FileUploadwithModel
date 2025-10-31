@@ -1,44 +1,37 @@
-name: Build .NET Framework 4.8 App
+name: Build .NET Framework 4.8 WebApp
 
 on:
+  workflow_dispatch: # lets you run it manually from the Actions tab
   push:
-    branches:
-      - none
-
-  workflow_dispatch:  # Enables manual trigger
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: windows-latest   # .NET Framework requires Windows
+    runs-on: windows-latest
 
     steps:
-      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Setup MSBuild (Visual Studio Build Tools)
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # Step 3: Setup NuGet
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
-      # Step 4: Restore NuGet packages
       - name: Restore NuGet packages
         run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
-      # Step 5: Build the solution
-      - name: Build Solution
-        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln /p:Configuration=Release /p:Platform="Any CPU"
+      - name: Build and Package Web App
+        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
+          /p:Configuration=Release `
+          /p:WebPublishMethod=Package `
+          /p:PackageAsSingleFile=true `
+          /p:SkipInvalidConfigurations=true `
+          /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\WebApp.zip"
 
-      # Step 6: (Optional) Package Web App (if it's a web project)
-      - name: Package Web App
-        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj /p:Configuration=Release /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="${{ github.workspace }}\\drop\\WebApp.zip"
-
-      # Step 7: Upload artifact (output files)
-      - name: Upload Build Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: drop
-          path: ${{ github.workspace }}\drop
+          name: WebApp
+          path: ${{ github.workspace }}\\drop\\WebApp.zip
