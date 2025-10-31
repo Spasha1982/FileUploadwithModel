@@ -14,43 +14,47 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # 1️⃣ Checkout your code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup tools
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
+      # 3️⃣ Restore dependencies
       - name: Restore NuGet packages
         run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
-      - name: Build Solution
-        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln /p:Configuration=Release
+      # 4️⃣ Ensure publish folder exists (prevents missing path errors)
+      - name: Create publish directory
+        run: |
+          $publishPath = "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
+          if (!(Test-Path $publishPath)) {
+            New-Item -ItemType Directory -Force -Path $publishPath
+            Write-Host "Created folder: $publishPath"
+          } else {
+            Write-Host "Folder already exists: $publishPath"
+          }
 
-      - name: Publish Web App (FileSystem)
+      # 5️⃣ Build and publish the web app
+      - name: Build and Publish Web App
         run: |
           msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
             /p:Configuration=Release `
             /p:DeployOnBuild=true `
             /p:WebPublishMethod=FileSystem `
             /p:DeleteExistingFiles=True `
-            /p:PublishUrl="${{ github.workspace }}\\publish"
+            /p:PublishUrl="${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
 
+      # 6️⃣ Verify the output folder content
       - name: Verify publish output
-        run: dir "${{ github.workspace }}\\publish"
+        run: dir "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
 
-      # Optional — keep build artifact for reference
-      - name: Upload Artifact (Published Files)
-        uses: actions/upload-artifact@v4
-        with:
-          name: WebApp
-          path: ${{ github.workspace }}\publish
-
-      # Deploy to Azure Web App (choose ONE method below 👇)
-
-      # ───────── OPTION 1: Using Publish Profile (simplest) ─────────
+      # 7️⃣ Deploy to Azure App Service (using Publish Profile)
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
@@ -63,7 +67,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: "shoppingapp132"
-          package: "${{ github.workspace }}\\publish"
+          package: "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
 
       # ───────── OPTION 2: Using Federated OIDC Identity (advanced) ─────────
       # Uncomment below *only* if you’ve configured a Federated Identity in Entra ID for this repo
