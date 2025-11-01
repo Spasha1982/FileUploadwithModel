@@ -30,13 +30,16 @@ jobs:
 
       # 4️⃣ Build Solution
       - name: Build Solution
-        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln ^
-          /p:Configuration=Release ^
-          /p:DeployOnBuild=true ^
-          /p:WebPublishMethod=FileSystem ^
-          /p:PackageAsSingleFile=false ^
-          /p:SkipInvalidConfigurations=true ^
-          /p:PackageLocation="${{ github.workspace }}\Package"
+        shell: pwsh
+        run: |
+          msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln `
+            /p:Configuration=Release `
+            /p:DeployOnBuild=true `
+            /p:WebPublishMethod=FileSystem `
+            /p:PackageAsSingleFile=false `
+            /p:SkipInvalidConfigurations=true `
+            /p:PackageLocation="${{ github.workspace }}\Package"
+
 
       # 5️⃣ Locate web.config and publish folders
       - name: Locate publish output
@@ -87,4 +90,5 @@ jobs:
         with:
           name: drop
           path: WebApp
+
 
