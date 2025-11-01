@@ -1,10 +1,11 @@
 name: Deploy to Azure Web App
 
 on:
+
+  workflow_dispatch: 
   workflow_run:
     workflows: ["Build and Publish ASP.NET App"]          # Trigger after successful 'Build' workflow
-    types:
-      - completed
+    types: [completed]
 permissions:
   id-token: write
   contents: read
