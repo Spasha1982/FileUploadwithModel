@@ -25,6 +25,9 @@ jobs:
       - name: Restore NuGet Packages
         run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       # 4️⃣ Build Solution
       - name: Build Solution
         run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln ^
@@ -84,3 +87,4 @@ jobs:
         with:
           name: drop
           path: WebApp
+
