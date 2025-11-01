@@ -2,9 +2,9 @@ name: Deploy to Azure Web App
 
 on:
   #workflow_dispatch:    # allows manual trigger
-  workflow_run:
-    workflows: ["BuildApp"]   # must match build.yml name exactly
-    types: [completed]
+  # workflow_run:
+  #   workflows: ["BuildApp"]   # must match build.yml name exactly
+  #   types: [completed]
 
 permissions:
   id-token: write
