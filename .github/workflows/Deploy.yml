@@ -3,7 +3,7 @@ name: Deploy to Azure Web App
 on:
   #workflow_dispatch:    # allows manual trigger
   workflow_run:
-    workflows: ["Build and Publish ASP.NET App"]   # must match build.yml name exactly
+    workflows: ["BuildApp"]   # must match build.yml name exactly
     types: [completed]
 
 permissions:
