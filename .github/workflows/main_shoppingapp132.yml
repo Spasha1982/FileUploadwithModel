@@ -1,67 +1,87 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP app to Azure Web App - shoppingapp132
+name: Build and Deploy .NET Framework 4.8 WebApp (FileUploadwithModel)
 
 on:
-  push:
-    branches:
-      - none
   workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      contents: read #This is required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      # 1️⃣ Install latest NuGet
+      - name: Install NuGet
+        uses: NuGet/setup-nuget@v1
+        with:
+          nuget-version: 'latest'
+          
+      # 2️⃣ Restore NuGet packages   
+      - name: Restore NuGet Packages
+        run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
 
-      - name: Setup MSBuild path
-        uses: microsoft/setup-msbuild@v1.0.2
+      # 3️⃣ Build using Visual Studio (MSBuild)  
+      - name: Build Solution
+        run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln ^
+          /p:Configuration=Release ^
+          /p:DeployOnBuild=true ^
+          /p:WebPublishMethod=FileSystem ^
+          /p:PackageAsSingleFile=false ^
+          /p:SkipInvalidConfigurations=true ^
+          /p:PackageLocation="${{ github.workspace }}\Package"
 
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.5
+      # 4️⃣ Debug - show where web.config and publish folders exist
+      - name: Locate publish output
+        shell: pwsh
+        run: |
+            Write-Host "=== Searching for web.config and publish folders ==="
+            Get-ChildItem "${{ github.workspace }}" -Recurse -Filter "web.config" | ForEach-Object {
+            Write-Host "Found web.config at: $($_.Directory.FullName)"
+            }
+      # 5️⃣ Copy publish output (detects PackageTmp or bin\Release)
+      - name: Copy publish output to artifact staging directory
+        shell: pwsh
+        run: |
+          $srcCandidates = @(
+            "${{ github.workspace }}\FileUploadwithModelandPreview\FileUploadwithModelandPreview\obj\Release\Package\PackageTmp",
+            "${{ github.workspace }}\FileUploadwithModelandPreview\FileUploadwithModelandPreview\bin\Release"
+          )
+      
+          $dst = "${{ github.workspace }}\WebApp"
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+      
+          $found = $false
+          foreach ($src in $srcCandidates) {
+            if (Test-Path $src) {
+              Write-Host "✅ Found publish folder at: $src"
+              Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
+              $found = $true
+              break
+            }
+          }
+      
+          if (-not $found) {
+            Write-Host "⚠️ No publish output found. Check build step above for errors."
+            exit 1
+          }
+          
+      # 6️⃣ Verify artifact folder contents
+      - name: List Artifact Staging Directory
+        shell: pwsh
+        run: |
+          Write-Host "=== Contents of ${{ github.workspace }}\WebApp ==="
+          Get-ChildItem "${{ github.workspace }}\WebApp" -Recurse
 
-      - name: Restore NuGet packages
-        run: nuget restore
-
-      - name: Publish to folder
-        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
-
-      - name: Upload artifact for deployment job
+      
+      # 7️⃣ Publish artifact for deployment
+      - name: Publish Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ASP-app
-          path: '/published/**'
+          name: drop
+          path: WebApp
 
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
 
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: ASP-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2EF3AE96E8D84393B86D04123CD028F2 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7C9C58E402454D969A890F28D65F6AFB }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5C72C19ACB3E45C187EF72574122F03D }}
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'shoppingapp132'
-          slot-name: 'Production'
-          package: .
-
-          
