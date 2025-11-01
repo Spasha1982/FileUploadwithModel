@@ -3,7 +3,7 @@ name: Build and Deploy .NET Framework 4.8 WebApp
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ none ]
 
 permissions:
   id-token: write
