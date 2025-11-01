@@ -1,4 +1,4 @@
-name: Build and Publish ASP.NET App
+name: BuildApp
 
 on:
   push:
@@ -132,6 +132,7 @@ jobs:
   #         slot-name: 'production'
   #         #publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
   #         package: './drop'
+
 
 
 
