@@ -35,6 +35,12 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Check artifact contents
+        run: |
+          echo "=== Checking drop folder ==="
+          dir ./drop /s
+
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
