@@ -2,9 +2,9 @@ name: Build and Publish ASP.NET App
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ none ]
+  # pull_request:
+  #   branches: [ main ]
     
 permissions:
   id-token: write
@@ -132,6 +132,7 @@ jobs:
   #         slot-name: 'production'
   #         #publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
   #         package: './drop'
+
 
 
 
