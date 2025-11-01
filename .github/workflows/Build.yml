@@ -1,170 +1,49 @@
-name: Build and Deploy .NET Framework 4.8 WebApp
+name: Deploy to Azure Web App
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ none ]
-
+  workflow_run:
+    workflows: ["Build"]          # Trigger after successful 'Build' workflow
+    types:
+      - completed
 permissions:
   id-token: write
   contents: read
-
 jobs:
-  build:
+  deploy:
+    name: Deploy ASP.NET Web App to Azure
     runs-on: windows-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      # 1️⃣ Checkout your code
-      - name: Checkout repository
+      # 1️⃣ Checkout repository (optional, if needed)
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup tools
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
-
-      # 3️⃣ Restore dependencies
-      - name: Restore NuGet packages
-        run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
-
-      # 4️⃣ Ensure publish folder exists (prevents missing path errors)
-      - name: Create publish directory
-        run: |
-          $publishPath = "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
-          if (!(Test-Path $publishPath)) {
-            New-Item -ItemType Directory -Force -Path $publishPath
-            Write-Host "Created folder: $publishPath"
-          } else {
-            Write-Host "Folder already exists: $publishPath"
-          }
-
-      # 5️⃣ Build and publish the web app
-      - name: Build and Publish Web App
-        run: |
-          msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
-            /p:Configuration=Release `
-            /p:DeployOnBuild=true `
-            /p:WebPublishMethod=FileSystem `
-            /p:DeleteExistingFiles=True `
-            /p:PublishUrl="${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
-
-      # 6️⃣ Verify the output folder content
-      - name: Verify publish output
-        run: dir "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
-        
-      - name: Upload Artifact (WebApp)
-        uses: actions/upload-artifact@v4
+      # 2️⃣ Download artifact from previous workflow
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
         with:
-          name: WebApp
-          path: ${{ github.workspace }}\FileUploadwithModelandPreview\FileUploadwithModelandPreview\publish
+          name: drop
+          path: ./drop
 
-      # 7️⃣ Deploy to Azure App Service (using Publish Profile)
-
+      # 3️⃣ Verify downloaded artifact contents
+      - name: Verify artifact contents
+        run: |
+          Write-Host "=== Contents of downloaded artifact ==="
+          Get-ChildItem ./drop -Recurse
+        shell: pwsh
+        
       - name: Login to Azure using OIDC
         uses: azure/login@v2
         with:
             client-id: ${{ secrets.AZURE_CLIENT_ID }}
             tenant-id: ${{ secrets.AZURE_TENANT_ID }}
             subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            
+      # 4️⃣ Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "shoppingapp132"
-          package: "${{ github.workspace }}\\FileUploadwithModelandPreview\\FileUploadwithModelandPreview\\publish"
-
-      # ───────── OPTION 2: Using Federated OIDC Identity (advanced) ─────────
-      # Uncomment below *only* if you’ve configured a Federated Identity in Entra ID for this repo
-      #
-      # - name: Login to Azure using OIDC
-      #   uses: azure/login@v2
-      #   with:
-      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
-      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      #
-      # - name: Deploy to Azure Web App (via OIDC)
-      #   uses: azure/webapps-deploy@v3
-      #   with:
-      #     app-name: "shoppingapp132"
-      #     package: "${{ github.workspace }}\\publish"
-
-
-
-
-
-# name: Build .NET Framework 4.8 WebApp
-
-# on:
-#   workflow_dispatch:
-#   push:
-#     branches: [ main ]
-# permissions:
-#   id-token: write
-#   contents: read
-# jobs:
-#   build:
-#     runs-on: windows-latest
-
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       - name: Setup MSBuild
-#         uses: microsoft/setup-msbuild@v2
-
-#       - name: Setup NuGet
-#         uses: NuGet/setup-nuget@v2
-
-#       - name: Show repository structure
-#         run: |
-#           echo "Current workspace: ${{ github.workspace }}"
-#           dir ${{ github.workspace }} -Recurse
-
-#       - name: Restore NuGet packages
-#         run: nuget restore FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln
-
-#       - name: Build Solution
-#         run: msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview.sln /p:Configuration=Release
-
-#       - name: Build and Publish Web App
-#         run: |
-#           msbuild FileUploadwithModelandPreview/FileUploadwithModelandPreview/FileUploadwithModelandPreview.csproj `
-#             /p:Configuration=Release `
-#             /p:DeployOnBuild=true `
-#             /p:WebPublishMethod=FileSystem `
-#             /p:DeleteExistingFiles=False `
-#             /p:PublishUrl="${{ github.workspace }}\\drop\\publish"
-
-#       - name: Verify publish output
-#         run: dir "${{ github.workspace }}\\drop\\publish"
-
-#       - name: Create Deployable Zip (for artifact)
-#         run: |
-#           cd ${{ github.workspace }}\\drop\\publish
-#           powershell -command "Compress-Archive -Path * -DestinationPath ${{ github.workspace }}\\drop\\FileUploadwithModelandPreview.zip"
-
-#       - name: Upload Artifact (WebApp.zip)
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: WebApp
-#           path: ${{ github.workspace }}\drop\FileUploadwithModelandPreview.zip
-          
-# # Step 7: Deploy to Azure App Service
-
-#       - name: Login to Azure using OIDC
-#         uses: azure/login@v2
-#         with:
-#             client-id: ${{ secrets.AZURE_CLIENT_ID }}
-#             tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-#             subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            
-#       - name: Deploy to Azure Web App
-#         uses: azure/webapps-deploy@v3
-#         with:
-#           app-name: "shoppingapp132"          # 👈 Replace with your Azure App Service name
-#           #slot-name: "production"
-#           #publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-#           package: "${{ github.workspace }}\\drop\\publish"
+          app-name: 'shoppingapp132'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: './drop'
