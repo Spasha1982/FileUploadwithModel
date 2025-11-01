@@ -10,37 +10,33 @@ permissions:
   id-token: write
   contents: read
 jobs:
+  # 2️⃣ Deploy Job
   deploy:
-    name: Deploy ASP.NET Web App to Azure
+    name: Deploy to Azure Web App
     runs-on: windows-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: build   # ensures deploy runs only if build succeeds
 
     steps:
-      # # 1️⃣ Checkout repository (optional, if needed)
-      # - name: Checkout code
-      #   uses: actions/checkout@v4
-
-      # 2️⃣ Download artifact from previous workflow
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
           name: drop
           path: ./drop
 
-      # 3️⃣ Verify downloaded artifact contents
       - name: Verify artifact contents
         run: |
           Write-Host "=== Contents of downloaded artifact ==="
           Get-ChildItem ./drop -Recurse
         shell: pwsh
         
+
       - name: Login to Azure using OIDC
         uses: azure/login@v2
         with:
             client-id: ${{ secrets.AZURE_CLIENT_ID }}
             tenant-id: ${{ secrets.AZURE_TENANT_ID }}
             subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      # 4️⃣ Deploy to Azure Web App
+            
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
